@@ -34,6 +34,55 @@ def test_signup_for_activity_adds_participant(client):
     assert client.get("/activities").json()["Soccer Team"]["participants"] == [email]
 
 
+def test_signup_for_multiple_activities_adds_participant_to_each(client):
+    email = "student@example.com"
+    activity_names = ["Soccer Team", "Chess Club"]
+
+    response = client.post(
+        "/activities/signup",
+        json={"email": email, "activity_names": activity_names},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": f"Signed up {email} for Soccer Team, Chess Club"
+    }
+    activities_response = client.get("/activities").json()
+    assert activities_response["Soccer Team"]["participants"] == [email]
+    assert activities_response["Chess Club"]["participants"] == [email]
+    assert client.get("/activities").headers["cache-control"] == "no-store"
+
+
+def test_signup_for_multiple_activities_is_atomic_when_one_is_unknown(client):
+    email = "student@example.com"
+
+    response = client.post(
+        "/activities/signup",
+        json={
+            "email": email,
+            "activity_names": ["Soccer Team", "Unknown Club"],
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Activity not found: Unknown Club"
+    assert client.get("/activities").json()["Soccer Team"]["participants"] == []
+
+
+def test_signup_for_multiple_activities_is_atomic_when_already_signed_up(client):
+    email = "student@example.com"
+    activities["Chess Club"]["participants"].append(email)
+
+    response = client.post(
+        "/activities/signup",
+        json={"email": email, "activity_names": ["Soccer Team", "Chess Club"]},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Student already signed up for: Chess Club"
+    assert client.get("/activities").json()["Soccer Team"]["participants"] == []
+
+
 def test_duplicate_signup_returns_400(client):
     # Arrange
     email = "student@example.com"

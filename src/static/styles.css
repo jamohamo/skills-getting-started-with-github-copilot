@@ -137,10 +137,49 @@ section h3 {
   margin-bottom: 15px;
 }
 
+.activity-selection {
+  border: 0;
+}
+
+.activity-selection legend {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.activity-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.activity-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.activity-option input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
 .form-group label {
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
+}
+
+.form-group .activity-option {
+  display: flex;
+  margin-bottom: 0;
+  font-weight: normal;
 }
 
 .form-group input,

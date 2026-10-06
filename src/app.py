@@ -5,7 +5,8 @@ A super simple FastAPI application that allows students to view and sign up
 for extracurricular activities at Mergington High School.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
+from pydantic import BaseModel, Field
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 import os
@@ -83,8 +84,83 @@ activities = {
         "max_participants": 20,
         "participants": [],
         "category": "Intellectual"
+    },
+    "Horse Riding": {
+        "description": "Learn riding techniques and care for horses while enjoying outdoor activities",
+        "schedule": "Saturdays, 9:00 AM - 11:00 AM",
+        "max_participants": 12,
+        "participants": [],
+        "category": "Outdoor"
+    },
+    "Camping Club": {
+        "description": "Build camping skills, outdoor survival knowledge, and teamwork in nature",
+        "schedule": "Sundays, 8:00 AM - 1:00 PM",
+        "max_participants": 16,
+        "participants": [],
+        "category": "Outdoor"
+    },
+    "Hiking Club": {
+        "description": "Explore local trails, improve endurance, and enjoy the outdoors together",
+        "schedule": "Saturdays, 8:00 AM - 10:30 AM",
+        "max_participants": 20,
+        "participants": [],
+        "category": "Outdoor"
+    },
+    "Rowing Team": {
+        "description": "Develop rowing technique, strength, and teamwork on the water",
+        "schedule": "Tuesdays and Thursdays, 5:00 PM - 6:30 PM",
+        "max_participants": 14,
+        "participants": [],
+        "category": "Outdoor"
+    },
+    "Archery Club": {
+        "description": "Practice precision, focus, and target shooting in a safe outdoor setting",
+        "schedule": "Wednesdays, 3:45 PM - 5:15 PM",
+        "max_participants": 10,
+        "participants": [],
+        "category": "Outdoor"
+    },
+    "Kayaking Club": {
+        "description": "Learn paddling skills and enjoy scenic routes on the lake or river",
+        "schedule": "Fridays, 4:00 PM - 6:00 PM",
+        "max_participants": 12,
+        "participants": [],
+        "category": "Outdoor"
+    },
+    "Rock Climbing": {
+        "description": "Build strength, coordination, and confidence through climbing challenges",
+        "schedule": "Mondays and Wednesdays, 3:30 PM - 5:00 PM",
+        "max_participants": 10,
+        "participants": [],
+        "category": "Outdoor"
+    },
+    "Outdoor Survival Skills": {
+        "description": "Learn shelter building, navigation, and emergency preparedness for the outdoors",
+        "schedule": "Saturdays, 9:30 AM - 12:00 PM",
+        "max_participants": 18,
+        "participants": [],
+        "category": "Outdoor"
+    },
+    "Cycling Club": {
+        "description": "Train for longer rides, practice biking safety, and explore the community trails",
+        "schedule": "Sundays, 9:00 AM - 11:00 AM",
+        "max_participants": 15,
+        "participants": [],
+        "category": "Outdoor"
+    },
+    "Nature Appreciation Group": {
+        "description": "Observe local wildlife, document ecosystems, and enjoy guided outdoor learning",
+        "schedule": "Thursdays, 4:00 PM - 5:30 PM",
+        "max_participants": 20,
+        "participants": [],
+        "category": "Outdoor"
     }
 }
+
+
+class ActivitySignupRequest(BaseModel):
+    email: str
+    activity_names: list[str] = Field(min_length=1)
 
 
 @app.get("/")
@@ -93,8 +169,52 @@ def root():
 
 
 @app.get("/activities")
-def get_activities():
+def get_activities(response: Response):
+    response.headers["Cache-Control"] = "no-store"
     return activities
+
+
+@app.post("/activities/signup")
+def signup_for_activities(request: ActivitySignupRequest):
+    """Sign up a student for multiple activities."""
+    unknown_activities = [
+        name for name in request.activity_names if name not in activities
+    ]
+    if unknown_activities:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Activity not found: {', '.join(unknown_activities)}",
+        )
+
+    if len(request.activity_names) != len(set(request.activity_names)):
+        raise HTTPException(
+            status_code=400,
+            detail="An activity can only be selected once",
+        )
+
+    already_signed_up = [
+        name
+        for name in request.activity_names
+        if request.email in activities[name]["participants"]
+    ]
+    if already_signed_up:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Student already signed up for: "
+                f"{', '.join(already_signed_up)}"
+            ),
+        )
+
+    for name in request.activity_names:
+        activities[name]["participants"].append(request.email)
+
+    return {
+        "message": (
+            f"Signed up {request.email} for "
+            f"{', '.join(request.activity_names)}"
+        )
+    }
 
 
 @app.post("/activities/{activity_name}/signup")

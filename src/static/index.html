@@ -28,13 +28,12 @@
             <label for="email">Student Email:</label>
             <input type="email" id="email" required placeholder="your-email@mergington.edu" />
           </div>
-          <div class="form-group">
-            <label for="activity">Select Activity:</label>
-            <select id="activity" required>
-              <option value="">-- Select an activity --</option>
+          <fieldset class="form-group activity-selection">
+            <legend>Select Activities:</legend>
+            <div id="activity-options" class="activity-options">
               <!-- Activity options will be loaded here -->
-            </select>
-          </div>
+            </div>
+          </fieldset>
           <button type="submit">Sign Up</button>
         </form>
         <div id="message" class="hidden"></div>
